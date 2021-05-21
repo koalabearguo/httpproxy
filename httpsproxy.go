@@ -57,38 +57,25 @@ func handleClientRequest(client net.Conn) {
 
 	defer client.Close()
 
-	var b [http.DefaultMaxHeaderBytes / 512]byte
+	var b [http.DefaultMaxHeaderBytes * 64 / 1024]byte
 	n, err := client.Read(b[:])
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	var firstline string = string(b[:bytes.IndexByte(b[:], '\r')])
-	log.Println(firstline)
-
-	var method, host, version, address string
-	fmt.Sscanf(firstline, "%s%s%s", &method, &host, &version)
-
-	hostPortURL, err := url.Parse(host)
+	reader := bufio.NewReader(strings.NewReader(string(b[:n])))
+	Req, err := http.ReadRequest(reader)
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
-
-	if hostPortURL.Host == "" && method != http.MethodConnect {
+	
+	log.Println(Req.Method,Req.URL,Req.Proto)
+	
+	if !Req.URL.IsAbs() && Req.URL.Host == "" && Req.Method != http.MethodConnect {
 		log.Println("None Proxy Mode Request")
-		fmt.Fprint(client, version+" 404 Not Found\r\n\r\n")
+		fmt.Fprint(client, Req.Proto+" 404 Not Found\r\n\r\n")
 		return
-	}
-	if method == http.MethodConnect {
-		address = hostPortURL.Scheme + ":" + hostPortURL.Opaque
-	} else {
-		if strings.Index(hostPortURL.Host, ":") == -1 { //host port not include,default 80
-			address = hostPortURL.Host + ":80"
-		} else {
-			address = hostPortURL.Host
-		}
 	}
 
 	//prepare to dial
@@ -97,15 +84,20 @@ func handleClientRequest(client net.Conn) {
 		log.Println(err)
 		return
 	}
-	server, err := net.DialTimeout("tcp", address, timeout)
-
-	log.Println(address)
-
+	var address string
+	if strings.Index(Req.URL.Host, ":") == -1 { //host port not include,default 80
+		address = Req.URL.Host+":http"
+	} else {
+		address = Req.URL.Host
+	}
+	
+    log.Println(address)
+    server, err := net.DialTimeout("tcp", address, timeout)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	if method == http.MethodConnect {
+	if Req.Method == http.MethodConnect {
 		fmt.Fprint(client, "HTTP/1.1 200 Connection established\r\n\r\n")
 	} else {
 		server.Write(b[:n])
