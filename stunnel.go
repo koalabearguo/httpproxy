@@ -55,7 +55,6 @@ func handleClientRequest(client net.Conn) {
 		InsecureSkipVerify: true,
 		ServerName:         "www.aliyun.com",
 		MinVersion:         tls.VersionTLS13,
-		MaxVersion:         tls.VersionTLS13,
 	}
 
 	server, err := tls.Dial("tcp", "s.koalabear.tk:443", conf)

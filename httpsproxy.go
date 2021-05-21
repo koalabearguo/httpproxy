@@ -29,7 +29,6 @@ func main() {
 	config := &tls.Config{
 		Certificates: []tls.Certificate{cer},
 		MinVersion:   tls.VersionTLS13,
-		MaxVersion:   tls.VersionTLS13,
 	}
 
 	ln, err := tls.Listen("tcp", listen, config)
