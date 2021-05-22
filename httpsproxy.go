@@ -69,9 +69,9 @@ func handleClientRequest(client net.Conn) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
-	log.Println(Req.Method,Req.URL,Req.Proto)
-	
+
+	log.Println(Req.Method, Req.URL, Req.Proto)
+
 	if !Req.URL.IsAbs() && Req.URL.Host == "" && Req.Method != http.MethodConnect {
 		log.Println("None Proxy Mode Request")
 		fmt.Fprint(client, Req.Proto+" 404 Not Found\r\n\r\n")
@@ -86,13 +86,13 @@ func handleClientRequest(client net.Conn) {
 	}
 	var address string
 	if strings.Index(Req.URL.Host, ":") == -1 { //host port not include,default 80
-		address = Req.URL.Host+":http"
+		address = Req.URL.Host + ":http"
 	} else {
 		address = Req.URL.Host
 	}
-	
-    log.Println(address)
-    server, err := net.DialTimeout("tcp", address, timeout)
+
+	log.Println(address)
+	server, err := net.DialTimeout("tcp", address, timeout)
 	if err != nil {
 		log.Println(err)
 		return
