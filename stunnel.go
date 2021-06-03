@@ -1,24 +1,31 @@
+//HTTPS2HTTP for HTTP/1.1 or HTTP/1.0
+
 package main
 
 import "net"
 
 import "net/http"
 import "log"
-
-//import "fmt"
-//import "net/url"
-//import "bytes"
-
 import "strings"
 import "io"
 import "bufio"
-
-//import "time"
+import "flag"
 import "crypto/tls"
+
+//
+var (
+	listen string
+	sni    string
+	server string
+)
 
 func main() {
 
-	listen := "127.0.0.1:8081"
+	flag.StringVar(&listen, "l", "127.0.0.1:80", "Local listen address")
+	flag.StringVar(&sni, "sni", "www.aliyun.com", "HTTPS sni extension ServerName")
+	flag.StringVar(&server, "s", "s.koalabear.tk:443", "HTTPS Server Host:Port")
+	flag.Parse()
+	//
 	ln, err := net.Listen("tcp", listen)
 	if err != nil {
 		log.Panic(err)
@@ -35,6 +42,7 @@ func main() {
 	}
 
 }
+
 func handleClientRequest(client net.Conn) {
 	if client == nil {
 		return
@@ -58,11 +66,11 @@ func handleClientRequest(client net.Conn) {
 
 	conf := &tls.Config{
 		InsecureSkipVerify: true,
-		ServerName:         "www.aliyun.com",
+		ServerName:         sni,
 		MinVersion:         tls.VersionTLS13,
 	}
 
-	server, err := tls.Dial("tcp", "s.koalabear.tk:443", conf)
+	server, err := tls.Dial("tcp", server, conf)
 
 	if err != nil {
 		log.Println(err)
